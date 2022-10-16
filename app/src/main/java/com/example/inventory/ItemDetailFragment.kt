@@ -16,6 +16,7 @@
 
 package com.example.inventory
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -69,7 +70,16 @@ class ItemDetailFragment : Fragment() {
             sellItem.setOnClickListener { viewModel.sellItem(item) }
             deleteItem.setOnClickListener { showConfirmationDialog() }
             editItem.setOnClickListener { editItem() }
+            shareItem.setOnClickListener { share(item) }
         }
+    }
+
+    private fun share(item: Item) {
+        val sharingIntent = Intent(Intent.ACTION_SEND)
+        sharingIntent.type = "text/plain"
+        sharingIntent.putExtra(Intent.EXTRA_TEXT, item.toString())
+
+        startActivity(Intent.createChooser(sharingIntent, null))
     }
 
     /**
