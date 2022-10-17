@@ -75,11 +75,14 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun share(item: Item) {
-        val sharingIntent = Intent(Intent.ACTION_SEND)
-        sharingIntent.type = "text/plain"
-        sharingIntent.putExtra(Intent.EXTRA_TEXT, item.toString())
+        val sendIntent: Intent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, item.toString())
+            type = "text/plain"
+        }
 
-        startActivity(Intent.createChooser(sharingIntent, null))
+        val shareIntent = Intent.createChooser(sendIntent, null)
+        startActivity(shareIntent)
     }
 
     /**
