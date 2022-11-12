@@ -34,4 +34,11 @@
     <string name="currency_symbol">$</string>
     <string name="edit_item">Edit Item</string>
     <string name="add_new_item">Add new item</string>
+    <string name="default_provider_name">Provider Name Default Value</string>
+    <string name="default_provider_email">Provider Email Default Value</string>
+    <string name="default_provider_phone">Provider Phone Default Value</string>
+    <string name="check_box_default">Default values</string>
+    <string name="check_box_hide">Sensitive data</string>
+    <string name="check_box_share">Data export</string>
+    <string name="settings">Settings</string>
 </resources>

@@ -30,6 +30,9 @@
         <action
             android:id="@+id/action_itemListFragment_to_addItemFragment"
             app:destination="@id/addItemFragment" />
+        <action
+            android:id="@+id/action_itemListFragment_to_itemSettingsFragment"
+            app:destination="@id/itemSettingsFragment" />
     </fragment>
     <fragment
         android:id="@+id/itemDetailFragment"
@@ -60,5 +63,14 @@
             app:destination="@id/itemListFragment"
             app:popUpTo="@id/itemListFragment"
             app:popUpToInclusive="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/itemSettingsFragment"
+        android:name="com.example.inventory.ItemSettingsFragment"
+        android:label="SettingFragment"
+        tools:layout="@layout/fragment_item_settings">
+        <action
+            android:id="@+id/action_itemSettingsFragment_to_itemListFragment"
+            app:destination="@id/itemListFragment" />
     </fragment>
 </navigation>

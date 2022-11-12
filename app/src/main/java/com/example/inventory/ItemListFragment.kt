@@ -72,5 +72,10 @@ class ItemListFragment : Fragment() {
             )
             this.findNavController().navigate(action)
         }
+
+        binding.floatingActionButton2.setOnClickListener {
+            val action = ItemListFragmentDirections.actionItemListFragmentToItemSettingsFragment()
+            this.findNavController().navigate(action)
+        }
     }
 }
