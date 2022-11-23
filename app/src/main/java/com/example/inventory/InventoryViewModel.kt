@@ -24,6 +24,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.inventory.data.Item
 import com.example.inventory.data.ItemDao
 import kotlinx.coroutines.launch
+import com.example.inventory.data.Record
 
 /**
  * View Model to keep a reference to the Inventory repository and an up-to-date list of all items.
@@ -34,6 +35,10 @@ class InventoryViewModel(private val itemDao: ItemDao) : ViewModel() {
     // Cache all items form the database using LiveData.
     val allItems: LiveData<List<Item>> = itemDao.getItems().asLiveData()
 
+    fun addNewItem(item: Item) {
+        item.record = Record.FILE
+        insertItem(item)
+    }
     /**
      * Returns true if stock is available to sell, false otherwise.
      */
@@ -82,8 +87,9 @@ class InventoryViewModel(private val itemDao: ItemDao) : ViewModel() {
     /**
      * Inserts the new Item into database.
      */
-    fun addNewItem(itemName: String, itemPrice: String, itemCount: String,
-                   providerName: String, providerEmail: String, phoneNumber: String) {
+    fun addNewItem(
+        itemName: String, itemPrice: String, itemCount: String,
+        providerName: String, providerEmail: String, phoneNumber: String) {
         val newItem = getNewItemEntry(itemName, itemPrice, itemCount,
             providerName, providerEmail, phoneNumber)
         insertItem(newItem)

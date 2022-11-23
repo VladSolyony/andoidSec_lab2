@@ -29,6 +29,28 @@ import com.example.inventory.data.Item
 import com.example.inventory.data.getFormattedPrice
 import com.example.inventory.databinding.FragmentItemDetailBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.app.Activity
+import android.content.Context
+import android.content.SharedPreferences
+import android.net.Uri
+import android.os.Environment
+import android.provider.DocumentsContract
+import android.text.method.HideReturnsTransformationMethod
+import android.text.method.PasswordTransformationMethod
+import android.util.Log
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat.startActivity
+import androidx.core.net.toFile
+import androidx.security.crypto.EncryptedFile
+import androidx.security.crypto.MasterKey
+import com.google.gson.Gson
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
+import java.nio.charset.StandardCharsets
+import androidx.security.crypto.EncryptedSharedPreferences
+import java.io.*
 
 /**
  * [ItemDetailFragment] displays the details of the selected item.
@@ -46,6 +68,8 @@ class ItemDetailFragment : Fragment() {
     private var _binding: FragmentItemDetailBinding? = null
     private val binding get() = _binding!!
 
+    private val PREFS_FILE = "Setting"
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -59,10 +83,27 @@ class ItemDetailFragment : Fragment() {
      * Binds views with the passed in item data.
      */
     private fun bind(item: Item) {
+        val sharedPreferences = EncryptedSharedPreferences.create(
+            requireContext(),
+            PREFS_FILE,
+            MasterKey.Builder(requireContext()).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
         binding.apply {
             itemName.text = item.itemName
             itemPrice.text = item.getFormattedPrice()
             itemCount.text = item.quantityInStock.toString()
+            if (!sharedPreferences.getBoolean("CheckBoxHide",false)){
+                providerName.transformationMethod = HideReturnsTransformationMethod.getInstance();
+                providerEmail.transformationMethod = HideReturnsTransformationMethod.getInstance();
+                phoneNumber.transformationMethod = HideReturnsTransformationMethod.getInstance();
+            }
+            else {
+                providerName.transformationMethod = PasswordTransformationMethod.getInstance();
+                providerEmail.transformationMethod = PasswordTransformationMethod.getInstance();
+                phoneNumber.transformationMethod = PasswordTransformationMethod.getInstance();
+            }
             providerName.text = item.providerName
             providerEmail.text = item.providerEmail
             phoneNumber.text = item.phoneNumber
@@ -71,7 +112,102 @@ class ItemDetailFragment : Fragment() {
             deleteItem.setOnClickListener { showConfirmationDialog() }
             editItem.setOnClickListener { editItem() }
             shareItem.setOnClickListener { share(item) }
+            shareItem.isEnabled = !sharedPreferences.getBoolean("CheckBoxForbid", false)
+            itemRecord.text = item.record.toString()
+            saveInFileBtn.setOnClickListener {
+                // Request code for creating a PDF document.
+                createFile(Uri.parse(requireContext().filesDir.toString()))
+            }
+
         }
+    }
+
+    private fun createFile(pickerInitialUri: Uri) {
+
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE,  item.itemName)
+
+            // Optionally, specify a URI for the directory that should be opened in
+            // the system file picker before your app creates the document.
+            putExtra(DocumentsContract.EXTRA_INITIAL_URI, pickerInitialUri)
+        }
+        requestUri.launch(intent)
+    }
+
+    private var requestUri = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val contentResolver = requireContext().contentResolver
+        if (result != null && result.resultCode == Activity.RESULT_OK) {
+            result.data?.let { intent ->
+                intent.data?.let { fileUri ->
+                    val mainKey = MasterKey.Builder(requireContext())
+                        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                        .build()
+
+                    val fileToWrite  = File(requireContext().cacheDir, item.itemName + ".json")
+
+                    val encryptedFile = EncryptedFile.Builder(
+                        requireContext(),
+                        fileToWrite,
+                        mainKey,
+                        EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+                    ).build()
+
+                    if (fileToWrite.exists()) {
+                        fileToWrite.delete()
+                    }
+
+                    try {
+                        val encryptedOutputStream = encryptedFile.openFileOutput()
+                        val gson = Gson()
+                        val fileContent = gson.toJson(item)
+                            .toByteArray(StandardCharsets.UTF_8)
+
+                        encryptedOutputStream.apply {
+                            write(fileContent)
+                            flush()
+                            close()
+                        }
+                    } catch (e: FileNotFoundException) {
+                        e.printStackTrace()
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                    }
+                    try {
+                        contentResolver.openFileDescriptor(fileUri, "w")?.use {
+                            if (!fileToWrite.exists()) {
+                                throw NoSuchFileException(fileToWrite )
+                            }
+
+                            FileOutputStream(it.fileDescriptor).use {
+                                it.write(
+                                    fileToWrite.inputStream().readBytes()
+                                )
+                            }
+                        }
+                    } catch (e: FileNotFoundException) {
+                        e.printStackTrace()
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun readTextFromUri(uri: Uri): String {
+        val stringBuilder = StringBuilder()
+        requireContext().contentResolver.openInputStream(uri)?.use { inputStream ->
+            BufferedReader(InputStreamReader(inputStream)).use { reader ->
+                var line: String? = reader.readLine()
+                while (line != null) {
+                    stringBuilder.append(line)
+                    line = reader.readLine()
+                }
+            }
+        }
+        return stringBuilder.toString()
     }
 
     private fun share(item: Item) {

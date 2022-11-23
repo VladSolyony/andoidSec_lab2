@@ -28,7 +28,7 @@
     <string name="quantity_in_stock">Quantity\nIn Stock</string>
     <string name="item">Item</string>
     <string name="delete">Delete</string>
-    <string name="delete_question">Are you sure you want to delete?</string>
+    <string name="delete_question">Delete this?</string>
     <string name="no">No</string>
     <string name="yes">Yes</string>
     <string name="currency_symbol">$</string>
@@ -41,4 +41,7 @@
     <string name="check_box_hide">Sensitive data</string>
     <string name="check_box_share">Data export</string>
     <string name="settings">Settings</string>
+    <string name="save_file">Save File</string>
+    <string name="load_file">Load File</string>
+    <string name="record">Created by</string>
 </resources>

@@ -40,10 +40,24 @@ data class Item(
     val providerEmail: String,
     @ColumnInfo(name = "number")
     val phoneNumber: String,
-
-)
+    @ColumnInfo(name = "Record")
+    var record: Record = Record.MANUAL
+) {
+    override fun toString() : String {
+        return "Item Name: ${itemName}\n" +
+                "Price: ${itemPrice}\n" +
+                "Quantity: ${quantityInStock}\n" +
+                "Provider Name: ${providerName}\n" +
+                "Provider Email: ${providerEmail}\n" +
+                "Provider Phone Number: ${phoneNumber}\n"
+    }
+}
 /**
  * Returns the passed in price in currency format.
  */
 fun Item.getFormattedPrice(): String =
     NumberFormat.getCurrencyInstance().format(itemPrice)
+
+enum class Record{
+    MANUAL, FILE
+}

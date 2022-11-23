@@ -28,6 +28,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.inventory.data.Item
 import com.example.inventory.databinding.FragmentAddItemBinding
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 
 /**
  * Fragment to add or update an item in the Inventory database.
@@ -45,6 +48,8 @@ class AddItemFragment : Fragment() {
     private val navigationArgs: ItemDetailFragmentArgs by navArgs()
 
     lateinit var item: Item
+
+    private val PREFS_FILE = "Setting"
 
     // Binding object instance corresponding to the fragment_add_item.xml layout
     // This property is non-null between the onCreateView() and onDestroyView() lifecycle callbacks,
@@ -78,18 +83,7 @@ class AddItemFragment : Fragment() {
     /**
      * Binds views with the passed in [item] information.
      */
-    private fun bind(item: Item) {
-        val price = "%.2f".format(item.itemPrice)
-        binding.apply {
-            itemName.setText(item.itemName, TextView.BufferType.SPANNABLE)
-            itemPrice.setText(price, TextView.BufferType.SPANNABLE)
-            itemCount.setText(item.quantityInStock.toString(), TextView.BufferType.SPANNABLE)
-            providerName.setText(item.providerName.toString(), TextView.BufferType.SPANNABLE)
-            providerEmail.setText(item.providerName.toString(), TextView.BufferType.SPANNABLE)
-            phoneNumber.setText(item.phoneNumber.toString(), TextView.BufferType.SPANNABLE)
-            saveAction.setOnClickListener { updateItem() }
-        }
-    }
+
 
     /**
      * Inserts the new Item into database and navigates up to list fragment.
@@ -109,6 +103,18 @@ class AddItemFragment : Fragment() {
         }
     }
 
+    private fun bind(item: Item) {
+        val price = "%.2f".format(item.itemPrice).replace(',', '.')
+        binding.apply {
+            itemName.setText(item.itemName, TextView.BufferType.SPANNABLE)
+            itemPrice.setText(price, TextView.BufferType.SPANNABLE)
+            itemCount.setText(item.quantityInStock.toString(), TextView.BufferType.SPANNABLE)
+            providerName.setText(item.providerName, TextView.BufferType.SPANNABLE)
+            providerEmail.setText(item.providerName, TextView.BufferType.SPANNABLE)
+            phoneNumber.setText(item.phoneNumber, TextView.BufferType.SPANNABLE)
+            saveAction.setOnClickListener { updateItem() }
+        }
+    }
     /**
      * Updates an existing Item in the database and navigates up to list fragment.
      */
@@ -144,6 +150,20 @@ class AddItemFragment : Fragment() {
                 bind(item)
             }
         } else {
+            val sharedPreferences = EncryptedSharedPreferences.create(
+                requireContext(),
+                PREFS_FILE,
+                MasterKey.Builder(requireContext()).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+            if (sharedPreferences.getBoolean("CheckBoxDefault",false)) {
+                binding.apply {
+                    providerName.setText(sharedPreferences.getString("ProviderName", ""))
+                    providerEmail.setText(sharedPreferences.getString("ProviderEmail", ""))
+                    phoneNumber.setText(sharedPreferences.getString("ProviderPhone", ""))
+                }
+            }
             binding.saveAction.setOnClickListener {
                 addNewItem()
             }

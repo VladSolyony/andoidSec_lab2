@@ -8,13 +8,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.navigation.fragment.findNavController
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.example.inventory.databinding.FragmentItemSettingsBinding
 
 class ItemSettingsFragment: Fragment() {
     private var _binding: FragmentItemSettingsBinding? = null
     private val binding get() = _binding!!
 
-    private val PREFS_FILE = "Settings"
+    private val PREFS_FILE = "Setting"
 
     private var settings: SharedPreferences? = null
     private var prefEditor: SharedPreferences.Editor? = null
@@ -30,17 +32,27 @@ class ItemSettingsFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        settings = requireContext().getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
+
+        val masterKeyAlias = MasterKey.Builder(requireContext()).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
+
+        val sharedPreferences = EncryptedSharedPreferences.create(
+            requireContext(),
+            PREFS_FILE,
+            masterKeyAlias,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+
         binding.apply {
-            defaultProviderName.setText(settings!!.getString("ProviderName",""))
-            defaultProviderEmail.setText(settings!!.getString("ProviderEmail",""))
-            defaultProviderPhone.setText(settings!!.getString("ProviderPhone",""))
-            checkBoxDefault.isChecked = settings!!.getBoolean("CheckBoxDefault",false)
-            checkBoxHide.isChecked = settings!!.getBoolean("CheckBoxHide",false)
-            checkBoxForbid.isChecked = settings!!.getBoolean("CheckBoxForbid",false)
+            defaultProviderName.setText(sharedPreferences.getString("ProviderName",""))
+            defaultProviderEmail.setText(sharedPreferences.getString("ProviderEmail",""))
+            defaultProviderPhone.setText(sharedPreferences.getString("ProviderPhone",""))
+            checkBoxDefault.isChecked = sharedPreferences.getBoolean("CheckBoxDefault",false)
+            checkBoxHide.isChecked = sharedPreferences.getBoolean("CheckBoxHide",false)
+            checkBoxForbid.isChecked = sharedPreferences.getBoolean("CheckBoxForbid",false)
 
             saveAction.setOnClickListener {
-                settings!!.edit().apply {
+                sharedPreferences.edit().apply {
                     putString("ProviderName", defaultProviderName.text.toString())
                     putString("ProviderEmail", defaultProviderEmail.text.toString())
                     putString("ProviderPhone", defaultProviderPhone.text.toString())
